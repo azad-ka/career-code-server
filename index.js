@@ -31,27 +31,43 @@ async function run() {
         const applicationCollection = client.db("careerCode").collection("applications");
 
         // jobs api
-        app.get('/jobs', async(req, res)=>{
+        app.get('/jobs', async (req, res) => {
             const cursor = jobsCollection.find();
             const result = await cursor.toArray();
             res.send(result);
         })
 
-        app.get('/jobs/:id', async(req,res)=>{
+        app.get('/jobs/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await jobsCollection.findOne(query);
             res.send(result);
         })
 
         // job applications api
-        app.post('/applications', async(req,res)=>{
+        app.post('/applications', async (req, res) => {
             const application = req.body;
             const result = await applicationCollection.insertOne(application);
             res.send(result);
         })
 
+        app.get('/applications', async (req, res) => {
+            const email = req.query.email;
+            const query = { applicant: email };
+            const result = await applicationCollection.find(query).toArray();
 
+            // aggregate data  do not recommended
+            for(const application of result){
+                const jobId = application.jobId;
+                const jobQuery = {_id: new ObjectId(jobId)};
+                const job = await jobsCollection.findOne(jobQuery);
+                application.company = job.company
+                application.title = job.title
+                application.company_logo = job.company_logo
+            }
+
+            res.send(result);
+        })
 
 
 
